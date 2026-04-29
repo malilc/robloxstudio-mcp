@@ -19,9 +19,9 @@ interface StreamableHttpConfig {
   tools: ToolDefinition[];
 }
 
-type ToolHandler = (tools: RobloxStudioTools, body: any) => Promise<any>;
+export type ToolHandler = (tools: RobloxStudioTools, body: any) => Promise<any>;
 
-const TOOL_HANDLERS: Record<string, ToolHandler> = {
+export const TOOL_HANDLERS: Record<string, ToolHandler> = {
   get_file_tree: (tools, body) => tools.getFileTree(body.path),
   search_files: (tools, body) => tools.searchFiles(body.query, body.searchType),
   get_place_info: (tools) => tools.getPlaceInfo(),
@@ -84,6 +84,7 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   get_asset_thumbnail: (tools, body) => tools.getAssetThumbnail(body.assetId, body.size),
   insert_asset: (tools, body) => tools.insertAsset(body.assetId, body.parentPath, body.position),
   preview_asset: (tools, body) => tools.previewAsset(body.assetId, body.includeProperties, body.maxDepth),
+  upload_asset: (tools, body) => tools.uploadAsset(body.filePath, body.assetType, body.displayName, body.description, body.userId, body.groupId),
   clone_object: (tools, body) => tools.cloneObject(body.instancePath, body.targetParentPath),
   get_descendants: (tools, body) => tools.getDescendants(body.instancePath, body.maxDepth, body.classFilter),
   compare_instances: (tools, body) => tools.compareInstances(body.instancePathA, body.instancePathB),

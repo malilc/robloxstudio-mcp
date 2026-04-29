@@ -7,7 +7,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import http from 'http';
-import { createHttpServer, listenWithRetry } from './http-server.js';
+import { createHttpServer, listenWithRetry, TOOL_HANDLERS } from './http-server.js';
 import { RobloxStudioTools } from './tools/index.js';
 import { BridgeService } from './bridge-service.js';
 import { ProxyBridgeService } from './proxy-bridge-service.js';
@@ -62,186 +62,16 @@ export class RobloxStudioMCPServer {
       const { name, arguments: args } = request.params;
 
       if (!this.allowedToolNames.has(name)) {
-        throw new McpError(
-          ErrorCode.MethodNotFound,
-          `Unknown tool: ${name}`
-        );
+        throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+      }
+
+      const handler = TOOL_HANDLERS[name];
+      if (!handler) {
+        throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
       }
 
       try {
-        switch (name) {
-
-          case 'get_file_tree':
-            return await this.tools.getFileTree((args as any)?.path || '');
-          case 'search_files':
-            return await this.tools.searchFiles((args as any)?.query as string, (args as any)?.searchType || 'name');
-
-          case 'get_place_info':
-            return await this.tools.getPlaceInfo();
-          case 'get_services':
-            return await this.tools.getServices((args as any)?.serviceName);
-          case 'search_objects':
-            return await this.tools.searchObjects((args as any)?.query as string, (args as any)?.searchType || 'name', (args as any)?.propertyName);
-
-          case 'get_instance_properties':
-            return await this.tools.getInstanceProperties((args as any)?.instancePath as string, (args as any)?.excludeSource);
-          case 'get_instance_children':
-            return await this.tools.getInstanceChildren((args as any)?.instancePath as string);
-          case 'search_by_property':
-            return await this.tools.searchByProperty((args as any)?.propertyName as string, (args as any)?.propertyValue as string);
-          case 'get_class_info':
-            return await this.tools.getClassInfo((args as any)?.className as string);
-
-          case 'get_project_structure':
-            return await this.tools.getProjectStructure((args as any)?.path, (args as any)?.maxDepth, (args as any)?.scriptsOnly);
-
-          case 'set_property':
-            return await this.tools.setProperty((args as any)?.instancePath as string, (args as any)?.propertyName as string, (args as any)?.propertyValue);
-          case 'set_properties':
-            return await this.tools.setProperties((args as any)?.instancePath as string, (args as any)?.properties);
-
-          case 'mass_set_property':
-            return await this.tools.massSetProperty((args as any)?.paths as string[], (args as any)?.propertyName as string, (args as any)?.propertyValue);
-          case 'mass_get_property':
-            return await this.tools.massGetProperty((args as any)?.paths as string[], (args as any)?.propertyName as string);
-
-          case 'create_object':
-            return await this.tools.createObject((args as any)?.className as string, (args as any)?.parent as string, (args as any)?.name, (args as any)?.properties);
-          case 'mass_create_objects':
-            return await this.tools.massCreateObjects((args as any)?.objects);
-          case 'delete_object':
-            return await this.tools.deleteObject((args as any)?.instancePath as string);
-
-          case 'smart_duplicate':
-            return await this.tools.smartDuplicate((args as any)?.instancePath as string, (args as any)?.count as number, (args as any)?.options);
-          case 'mass_duplicate':
-            return await this.tools.massDuplicate((args as any)?.duplications);
-
-          case 'grep_scripts':
-            return await this.tools.grepScripts((args as any)?.pattern as string, {
-              caseSensitive: (args as any)?.caseSensitive,
-              usePattern: (args as any)?.usePattern,
-              contextLines: (args as any)?.contextLines,
-              maxResults: (args as any)?.maxResults,
-              maxResultsPerScript: (args as any)?.maxResultsPerScript,
-              filesOnly: (args as any)?.filesOnly,
-              path: (args as any)?.path,
-              classFilter: (args as any)?.classFilter,
-            });
-
-          case 'get_script_source':
-            return await this.tools.getScriptSource((args as any)?.instancePath as string, (args as any)?.startLine, (args as any)?.endLine);
-          case 'set_script_source':
-            return await this.tools.setScriptSource((args as any)?.instancePath as string, (args as any)?.source as string);
-
-          case 'edit_script_lines':
-            return await this.tools.editScriptLines((args as any)?.instancePath as string, (args as any)?.old_string as string, (args as any)?.new_string as string, (args as any)?.startLine as number | undefined);
-          case 'insert_script_lines':
-            return await this.tools.insertScriptLines((args as any)?.instancePath as string, (args as any)?.afterLine as number, (args as any)?.newContent as string);
-          case 'delete_script_lines':
-            return await this.tools.deleteScriptLines((args as any)?.instancePath as string, (args as any)?.startLine as number, (args as any)?.endLine as number);
-
-          case 'set_attribute':
-            return await this.tools.setAttribute((args as any)?.instancePath as string, (args as any)?.attributeName as string, (args as any)?.attributeValue, (args as any)?.valueType);
-          case 'get_attributes':
-            return await this.tools.getAttributes((args as any)?.instancePath as string);
-          case 'delete_attribute':
-            return await this.tools.deleteAttribute((args as any)?.instancePath as string, (args as any)?.attributeName as string);
-
-          case 'get_tags':
-            return await this.tools.getTags((args as any)?.instancePath as string);
-          case 'add_tag':
-            return await this.tools.addTag((args as any)?.instancePath as string, (args as any)?.tagName as string);
-          case 'remove_tag':
-            return await this.tools.removeTag((args as any)?.instancePath as string, (args as any)?.tagName as string);
-          case 'get_tagged':
-            return await this.tools.getTagged((args as any)?.tagName as string);
-
-          case 'get_selection':
-            return await this.tools.getSelection();
-
-          case 'execute_luau':
-            return await this.tools.executeLuau((args as any)?.code as string, (args as any)?.target);
-
-          case 'start_playtest':
-            return await this.tools.startPlaytest((args as any)?.mode as string, (args as any)?.numPlayers);
-          case 'stop_playtest':
-            return await this.tools.stopPlaytest();
-          case 'get_playtest_output':
-            return await this.tools.getPlaytestOutput((args as any)?.target);
-          case 'get_connected_instances':
-            return await this.tools.getConnectedInstances();
-
-          case 'export_build':
-            return await this.tools.exportBuild((args as any)?.instancePath as string, (args as any)?.outputId, (args as any)?.style);
-          case 'create_build':
-            return await this.tools.createBuild((args as any)?.id as string, (args as any)?.style as string, (args as any)?.palette, (args as any)?.parts, (args as any)?.bounds);
-          case 'generate_build':
-            return await this.tools.generateBuild((args as any)?.id as string, (args as any)?.style as string, (args as any)?.palette, (args as any)?.code as string, (args as any)?.seed);
-          case 'import_build':
-            return await this.tools.importBuild((args as any)?.buildData, (args as any)?.targetPath as string, (args as any)?.position);
-          case 'list_library':
-            return await this.tools.listLibrary((args as any)?.style);
-          case 'search_materials':
-            return await this.tools.searchMaterials((args as any)?.query, (args as any)?.maxResults);
-          case 'get_build':
-            return await this.tools.getBuild((args as any)?.id as string);
-          case 'import_scene':
-            return await this.tools.importScene((args as any)?.sceneData, (args as any)?.targetPath);
-
-          case 'undo':
-            return await this.tools.undo();
-          case 'redo':
-            return await this.tools.redo();
-
-          case 'search_assets':
-            return await this.tools.searchAssets((args as any)?.assetType as string, (args as any)?.query, (args as any)?.maxResults, (args as any)?.sortBy, (args as any)?.verifiedCreatorsOnly);
-          case 'get_asset_details':
-            return await this.tools.getAssetDetails((args as any)?.assetId as number);
-          case 'get_asset_thumbnail':
-            return await this.tools.getAssetThumbnail((args as any)?.assetId as number, (args as any)?.size);
-          case 'insert_asset':
-            return await this.tools.insertAsset((args as any)?.assetId as number, (args as any)?.parentPath, (args as any)?.position);
-          case 'preview_asset':
-            return await this.tools.previewAsset((args as any)?.assetId as number, (args as any)?.includeProperties, (args as any)?.maxDepth);
-          case 'upload_asset':
-            return await this.tools.uploadAsset((args as any)?.filePath as string, (args as any)?.assetType as string, (args as any)?.displayName as string, (args as any)?.description, (args as any)?.userId, (args as any)?.groupId);
-          case 'clone_object':
-            return await this.tools.cloneObject((args as any)?.instancePath as string, (args as any)?.targetParentPath as string);
-          case 'get_descendants':
-            return await this.tools.getDescendants((args as any)?.instancePath as string, (args as any)?.maxDepth, (args as any)?.classFilter);
-          case 'compare_instances':
-            return await this.tools.compareInstances((args as any)?.instancePathA as string, (args as any)?.instancePathB as string);
-          case 'get_output_log':
-            return await this.tools.getOutputLog((args as any)?.maxEntries, (args as any)?.messageType);
-          case 'bulk_set_attributes':
-            return await this.tools.bulkSetAttributes((args as any)?.instancePath as string, (args as any)?.attributes);
-
-          case 'capture_screenshot':
-            return await this.tools.captureScreenshot();
-
-          case 'simulate_mouse_input':
-            return await this.tools.simulateMouseInput((args as any)?.action as string, (args as any)?.x as number, (args as any)?.y as number, (args as any)?.button, (args as any)?.scrollDirection, (args as any)?.target);
-          case 'simulate_keyboard_input':
-            return await this.tools.simulateKeyboardInput((args as any)?.keyCode as string, (args as any)?.action, (args as any)?.duration, (args as any)?.target);
-          case 'character_navigation':
-            return await this.tools.characterNavigation((args as any)?.position, (args as any)?.instancePath, (args as any)?.waitForCompletion, (args as any)?.timeout, (args as any)?.target);
-          case 'find_and_replace_in_scripts':
-            return await this.tools.findAndReplaceInScripts((args as any)?.pattern as string, (args as any)?.replacement as string, {
-              caseSensitive: (args as any)?.caseSensitive,
-              usePattern: (args as any)?.usePattern,
-              path: (args as any)?.path,
-              classFilter: (args as any)?.classFilter,
-              dryRun: (args as any)?.dryRun,
-              maxReplacements: (args as any)?.maxReplacements,
-            });
-
-          default:
-            throw new McpError(
-              ErrorCode.MethodNotFound,
-              `Unknown tool: ${name}`
-            );
-        }
+        return await handler(this.tools, args ?? {});
       } catch (error) {
         if (error instanceof McpError) throw error;
         throw new McpError(
