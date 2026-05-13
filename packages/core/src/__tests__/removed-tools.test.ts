@@ -24,9 +24,11 @@ describe('REMOVED_TOOLS', () => {
     expect(REMOVED_TOOLS.upload_decal).toMatch(/upload_asset/);
   });
 
-  test('move_object and rename_object explanations point to set_property', () => {
+  test('move_object and rename_object explanations point to set_property with propertyValue', () => {
     expect(REMOVED_TOOLS.move_object).toMatch(/set_property/);
+    expect(REMOVED_TOOLS.move_object).toMatch(/propertyValue/);
     expect(REMOVED_TOOLS.rename_object).toMatch(/set_property/);
+    expect(REMOVED_TOOLS.rename_object).toMatch(/propertyValue/);
   });
 
   test('get_attribute explanation points to get_attributes', () => {
