@@ -239,14 +239,14 @@ export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService
         request: pendingRequest.request,
         requestId: pendingRequest.requestId,
         mcpConnected: true,
-        pluginConnected: true,
+        pluginConnected: isPluginConnected(),
         proxyInstanceCount: proxyInstances.size
       });
     } else {
       res.json({
         request: null,
         mcpConnected: true,
-        pluginConnected: true,
+        pluginConnected: isPluginConnected(),
         proxyInstanceCount: proxyInstances.size
       });
     }
