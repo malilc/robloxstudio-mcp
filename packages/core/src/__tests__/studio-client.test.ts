@@ -28,7 +28,7 @@ describe('StudioHttpClient.request', () => {
 
     try {
       await expect(client.request('/api/test', {})).rejects.toThrow(
-        /became unresponsive/
+        /became unresponsive \(last poll \d+ms ago\)/
       );
       expect(bridge.getPendingRequestCount()).toBe(0);
     } finally {

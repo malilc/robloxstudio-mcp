@@ -18,7 +18,7 @@ export class StudioHttpClient {
     }
     if (health.status === PluginStatus.STALE) {
       throw new Error(
-        `Studio plugin became unresponsive (last poll ${health.msSinceLastActivity}ms ago). Verify Studio is not frozen, check the plugin toolbar status, and try reactivating the plugin.`
+        `Studio plugin became unresponsive (last poll ${health.msSinceLastActivity!}ms ago). Verify Studio is not frozen, check the plugin toolbar status, and try reactivating the plugin.`
       );
     }
 
