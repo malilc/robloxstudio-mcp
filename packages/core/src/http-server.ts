@@ -11,6 +11,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { RobloxStudioTools } from './tools/index.js';
 import { BridgeService } from './bridge-service.js';
+import { hasAnyResponsivePlugin } from './plugin-health.js';
 import type { ToolDefinition } from './tools/definitions.js';
 
 interface StreamableHttpConfig {
@@ -133,9 +134,7 @@ export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService
     return (Date.now() - lastMCPActivity) < 30000;
   };
 
-  const isPluginConnected = () => {
-    return bridge.getInstances().length > 0;
-  };
+  const isPluginConnected = () => hasAnyResponsivePlugin(bridge);
 
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));
@@ -148,7 +147,7 @@ export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService
       status: 'ok',
       service: 'robloxstudio-mcp',
       version: serverConfig?.version,
-      pluginConnected: instances.length > 0,
+      pluginConnected: isPluginConnected(),
       instanceCount: instances.length,
       instances: instances.map(i => ({
         instanceId: i.instanceId,

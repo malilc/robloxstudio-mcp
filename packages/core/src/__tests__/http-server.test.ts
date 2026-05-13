@@ -80,6 +80,33 @@ describe('HTTP Server', () => {
       bridge.unregisterInstance('stale-1');
       expect(app.isPluginConnected()).toBe(false);
     });
+
+    test('should report pluginConnected=false when instance is stale (lastActivity old)', () => {
+      bridge.registerInstance('stale-1', 'edit');
+      expect(app.isPluginConnected()).toBe(true);
+
+      // Make the instance look stale by stubbing Date.now
+      const originalDateNow = Date.now;
+      try {
+        Date.now = jest.fn(() => originalDateNow() + 10000);
+        expect(app.isPluginConnected()).toBe(false);
+      } finally {
+        Date.now = originalDateNow;
+      }
+    });
+
+    test('/health should reflect stale state', async () => {
+      await request(app).post('/ready').send({ instanceId: 'test-1', role: 'edit' }).expect(200);
+
+      const originalDateNow = Date.now;
+      try {
+        Date.now = jest.fn(() => originalDateNow() + 10000);
+        const response = await request(app).get('/health').expect(200);
+        expect(response.body.pluginConnected).toBe(false);
+      } finally {
+        Date.now = originalDateNow;
+      }
+    });
   });
 
   describe('Polling Endpoint', () => {
