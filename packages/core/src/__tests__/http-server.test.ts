@@ -244,5 +244,18 @@ describe('HTTP Server', () => {
       expect(response.body.lastMCPActivity).toBeGreaterThan(0);
       expect(response.body.uptime).toBeGreaterThan(0);
     });
+
+    test('/status should reflect stale state', async () => {
+      await request(app).post('/ready').send({ instanceId: 'test-1', role: 'edit' }).expect(200);
+
+      const originalDateNow = Date.now;
+      try {
+        Date.now = jest.fn(() => originalDateNow() + 10000);
+        const response = await request(app).get('/status').expect(200);
+        expect(response.body.pluginConnected).toBe(false);
+      } finally {
+        Date.now = originalDateNow;
+      }
+    });
   });
 });

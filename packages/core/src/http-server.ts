@@ -193,7 +193,7 @@ export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService
   app.get('/status', (req, res) => {
     const instances = bridge.getInstances();
     res.json({
-      pluginConnected: instances.length > 0,
+      pluginConnected: isPluginConnected(),
       instanceCount: instances.length,
       instances: instances.map(i => ({ instanceId: i.instanceId, role: i.role })),
       mcpServerActive: isMCPServerActive(),
