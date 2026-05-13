@@ -50,6 +50,15 @@ describe('checkPluginHealth', () => {
     expect(result.msSinceLastActivity).toBe(6000);
   });
 
+  test('instance at exactly threshold (5s old) → STALE', () => {
+    bridge.registerInstance('e1', 'edit');
+    const inst = bridge.getInstances().find(i => i.role === 'edit')!;
+    const baseNow = Date.now();
+    inst.lastActivity = baseNow - RESPONSIVE_THRESHOLD_MS;
+    const result = checkPluginHealth(bridge, 'edit', { now: baseNow });
+    expect(result.status).toBe(PluginStatus.STALE);
+  });
+
   test('responsiveThresholdMs override changes boundary', () => {
     bridge.registerInstance('e1', 'edit');
     const inst = bridge.getInstances().find(i => i.role === 'edit')!;
@@ -89,9 +98,9 @@ describe('hasAnyResponsivePlugin', () => {
 
   test('mixed: responsive edit + stale client → true', () => {
     bridge.registerInstance('e1', 'edit');
-    bridge.registerInstance('c1', 'client');
+    const clientRole = bridge.registerInstance('c1', 'client');
     const baseNow = Date.now();
-    const staleInst = bridge.getInstances().find(i => i.role === 'client-1')!;
+    const staleInst = bridge.getInstances().find(i => i.role === clientRole)!;
     staleInst.lastActivity = baseNow - 10000;
     expect(hasAnyResponsivePlugin(bridge, { now: baseNow })).toBe(true);
   });
