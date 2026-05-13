@@ -267,6 +267,13 @@ describe('HTTP Server', () => {
       expect(typeof handler).toBe('function');
     });
 
+    test('returns handler when name is in allowedTools', () => {
+      const allowed = new Set(['get_place_info']);
+      const handler = resolveToolHandler('get_place_info', allowed);
+      expect(handler).toBeDefined();
+      expect(typeof handler).toBe('function');
+    });
+
     test('throws McpError with migration message for a removed tool', () => {
       let caught: McpError | undefined;
       try {

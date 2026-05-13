@@ -106,17 +106,18 @@ export const TOOL_HANDLERS: Record<string, ToolHandler> = {
   }),
 };
 
+function failForName(name: string): never {
+  const removed = REMOVED_TOOLS[name];
+  throw new McpError(ErrorCode.MethodNotFound, removed ?? `Unknown tool: ${name}`);
+}
+
 export function resolveToolHandler(name: string, allowedTools?: Set<string>): ToolHandler {
   if (allowedTools && !allowedTools.has(name)) {
-    const removed = REMOVED_TOOLS[name];
-    if (removed) throw new McpError(ErrorCode.MethodNotFound, removed);
-    throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+    failForName(name);
   }
   const handler = TOOL_HANDLERS[name];
   if (!handler) {
-    const removed = REMOVED_TOOLS[name];
-    if (removed) throw new McpError(ErrorCode.MethodNotFound, removed);
-    throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+    failForName(name);
   }
   return handler;
 }

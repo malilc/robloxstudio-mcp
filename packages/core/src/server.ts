@@ -7,7 +7,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import http from 'http';
-import { createHttpServer, listenWithRetry, resolveToolHandler, TOOL_HANDLERS } from './http-server.js';
+import { createHttpServer, listenWithRetry, resolveToolHandler } from './http-server.js';
 import { RobloxStudioTools } from './tools/index.js';
 import { BridgeService } from './bridge-service.js';
 import { ProxyBridgeService } from './proxy-bridge-service.js';
