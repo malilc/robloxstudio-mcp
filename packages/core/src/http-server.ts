@@ -243,7 +243,7 @@ export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService
     if (!isMCPServerActive()) {
       res.status(503).json({
         error: 'MCP server not connected',
-        pluginConnected: true,
+        pluginConnected: isPluginConnected(),
         mcpConnected: false,
         request: null
       });

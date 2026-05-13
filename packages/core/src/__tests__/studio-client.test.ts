@@ -62,4 +62,26 @@ describe('StudioHttpClient.request', () => {
 
     await expect(client.request('/api/test', {})).rejects.toThrow('some other error');
   });
+
+  test('non-local bridge (proxy) skips health check and delegates to sendRequest', async () => {
+    // Simulate a proxy bridge by overriding isLocal to return false
+    const proxyLikeBridge = new BridgeService();
+    (proxyLikeBridge as any).isLocal = () => false;
+    const proxyClient = new StudioHttpClient(proxyLikeBridge);
+
+    // Empty bridge (no instances registered), but isLocal=false should skip the check
+    jest.spyOn(proxyLikeBridge, 'sendRequest').mockResolvedValue({ result: 'forwarded' });
+
+    await expect(proxyClient.request('/api/test', {})).resolves.toEqual({ result: 'forwarded' });
+    expect(proxyLikeBridge.sendRequest).toHaveBeenCalledWith('/api/test', {}, 'edit');
+  });
+
+  test('Proxy request timeout error is also remapped to "handler timed out"', async () => {
+    bridge.registerInstance('e1', 'edit');
+    jest.spyOn(bridge, 'sendRequest').mockRejectedValue(new Error('Proxy request timeout'));
+
+    await expect(client.request('/api/test', {})).rejects.toThrow(
+      /handler timed out after 30s/
+    );
+  });
 });

@@ -61,6 +61,14 @@ export class BridgeService {
     return Array.from(this.instances.values());
   }
 
+  /**
+   * True when this bridge owns the instance registry (primary mode).
+   * False for proxies that forward to a primary — they have no local instance state.
+   */
+  isLocal(): boolean {
+    return true;
+  }
+
   getPendingRequestCount(): number {
     return this.pendingRequests.size;
   }

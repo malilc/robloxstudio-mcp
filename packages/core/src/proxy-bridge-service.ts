@@ -45,6 +45,10 @@ export class ProxyBridgeService extends BridgeService {
     }
   }
 
+  override isLocal(): boolean {
+    return false;
+  }
+
   override cleanupOldRequests(): void {
     // No-op: primary bridge owns the pending request state
   }
