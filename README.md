@@ -33,6 +33,8 @@ gemini mcp add robloxstudio npx --trust -- -y robloxstudio-mcp@latest
 
 Plugin shows "Connected" when ready.
 
+**If tool calls fail:** the server returns specific errors so you can act on them — `Studio plugin not connected` (open Studio & enable HTTP), `Studio plugin became unresponsive` (Studio may be frozen — reactivate the plugin), or `Studio plugin handler timed out` (operation too large — try a narrower scope).
+
 <details>
 <summary>Other MCP clients (Claude Desktop, Cursor, etc.)</summary>
 
