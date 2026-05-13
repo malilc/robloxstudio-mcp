@@ -7,7 +7,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import http from 'http';
-import { createHttpServer, listenWithRetry, TOOL_HANDLERS } from './http-server.js';
+import { createHttpServer, listenWithRetry, resolveToolHandler, TOOL_HANDLERS } from './http-server.js';
 import { RobloxStudioTools } from './tools/index.js';
 import { BridgeService } from './bridge-service.js';
 import { ProxyBridgeService } from './proxy-bridge-service.js';
@@ -60,15 +60,7 @@ export class RobloxStudioMCPServer {
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-
-      if (!this.allowedToolNames.has(name)) {
-        throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-      }
-
-      const handler = TOOL_HANDLERS[name];
-      if (!handler) {
-        throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-      }
+      const handler = resolveToolHandler(name, this.allowedToolNames);
 
       try {
         return await handler(this.tools, args ?? {});

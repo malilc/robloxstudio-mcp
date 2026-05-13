@@ -1,5 +1,6 @@
 import request from 'supertest';
-import { createHttpServer } from '../http-server.js';
+import { createHttpServer, resolveToolHandler } from '../http-server.js';
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { RobloxStudioTools } from '../tools/index.js';
 import { BridgeService } from '../bridge-service.js';
 import { Application } from 'express';
@@ -256,6 +257,63 @@ describe('HTTP Server', () => {
       } finally {
         Date.now = originalDateNow;
       }
+    });
+  });
+
+  describe('resolveToolHandler', () => {
+    test('returns handler for a known tool', () => {
+      const handler = resolveToolHandler('get_place_info');
+      expect(handler).toBeDefined();
+      expect(typeof handler).toBe('function');
+    });
+
+    test('throws McpError with migration message for a removed tool', () => {
+      let caught: McpError | undefined;
+      try {
+        resolveToolHandler('get_script_analysis');
+      } catch (e) {
+        caught = e as McpError;
+      }
+      expect(caught).toBeDefined();
+      expect(caught!.code).toBe(ErrorCode.MethodNotFound);
+      expect(caught!.message).toMatch(/removed in v2\.7\.0/);
+      expect(caught!.message).toMatch(/grep_scripts/);
+    });
+
+    test('throws "Unknown tool" McpError for a genuinely unknown name', () => {
+      let caught: McpError | undefined;
+      try {
+        resolveToolHandler('totally_fake_xyz');
+      } catch (e) {
+        caught = e as McpError;
+      }
+      expect(caught).toBeDefined();
+      expect(caught!.code).toBe(ErrorCode.MethodNotFound);
+      expect(caught!.message).toMatch(/Unknown tool: totally_fake_xyz/);
+    });
+
+    test('respects allowedTools restriction (treats out-of-allowlist as unknown)', () => {
+      const allowed = new Set(['get_place_info']);
+      let caught: McpError | undefined;
+      try {
+        resolveToolHandler('get_services', allowed);
+      } catch (e) {
+        caught = e as McpError;
+      }
+      expect(caught).toBeDefined();
+      expect(caught!.message).toMatch(/Unknown tool: get_services/);
+    });
+
+    test('allowedTools restriction also surfaces removed-tool message', () => {
+      const allowed = new Set(['get_place_info']);
+      let caught: McpError | undefined;
+      try {
+        resolveToolHandler('get_script_analysis', allowed);
+      } catch (e) {
+        caught = e as McpError;
+      }
+      expect(caught).toBeDefined();
+      expect(caught!.message).toMatch(/removed in v2\.7\.0/);
     });
   });
 });

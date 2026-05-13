@@ -13,6 +13,7 @@ import { RobloxStudioTools } from './tools/index.js';
 import { BridgeService } from './bridge-service.js';
 import { hasAnyResponsivePlugin } from './plugin-health.js';
 import type { ToolDefinition } from './tools/definitions.js';
+import { REMOVED_TOOLS } from './removed-tools.js';
 
 interface StreamableHttpConfig {
   name: string;
@@ -104,6 +105,21 @@ export const TOOL_HANDLERS: Record<string, ToolHandler> = {
     maxReplacements: body.maxReplacements,
   }),
 };
+
+export function resolveToolHandler(name: string, allowedTools?: Set<string>): ToolHandler {
+  if (allowedTools && !allowedTools.has(name)) {
+    const removed = REMOVED_TOOLS[name];
+    if (removed) throw new McpError(ErrorCode.MethodNotFound, removed);
+    throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+  }
+  const handler = TOOL_HANDLERS[name];
+  if (!handler) {
+    const removed = REMOVED_TOOLS[name];
+    if (removed) throw new McpError(ErrorCode.MethodNotFound, removed);
+    throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+  }
+  return handler;
+}
 
 export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService, allowedTools?: Set<string>, serverConfig?: StreamableHttpConfig) {
   const app = express();
@@ -310,14 +326,7 @@ export function createHttpServer(tools: RobloxStudioTools, bridge: BridgeService
 
         server.setRequestHandler(CallToolRequestSchema, async (request) => {
           const { name, arguments: args } = request.params;
-
-          if (allowedTools && !allowedTools.has(name)) {
-            throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-          }
-          const handler = TOOL_HANDLERS[name];
-          if (!handler) {
-            throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
-          }
+          const handler = resolveToolHandler(name, allowedTools);
 
           try {
             return await handler(tools, args || {});
